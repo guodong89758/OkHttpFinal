@@ -18,6 +18,9 @@ package cn.finalteam.okhttpfinal;
 
 import java.lang.reflect.Type;
 
+import okhttp3.Headers;
+import okhttp3.Response;
+
 /**
  * Desction:请求回调类
  * Author:pengjianbo
@@ -29,18 +32,28 @@ public class BaseHttpRequestCallback<T> {
     public static final int ERROR_RESPONSE_JSON_EXCEPTION = 1002;
     public static final int ERROR_RESPONSE_UNKNOWN = 1003;
     public static final int ERROR_RESPONSE_TIMEOUT = 1004;
-    protected Type mType;
+    protected Type type;
+    protected Headers headers;
 
     public BaseHttpRequestCallback() {
-        mType = ClassTypeReflect.getModelClazz(getClass());
+        type = ClassTypeReflect.getModelClazz(getClass());
     }
 
     public void onStart() {
     }
 
+    public void onResponse(Response httpResponse, String response, Headers headers) {
+
+    }
+
+    public void onResponse(String response, Headers headers) {
+    }
+
     public void onFinish() {
     }
 
+    protected void onSuccess(Headers headers, T t) {
+    }
     protected void onSuccess(T t) {
 
     }
@@ -57,6 +70,13 @@ public class BaseHttpRequestCallback<T> {
     public void onFailure(int errorCode, String msg) {
     }
 
+    public Headers getHeaders() {
+        return headers;
+    }
+
+    protected void setResponseHeaders(Headers headers) {
+        this.headers = headers;
+    }
 
 
 }

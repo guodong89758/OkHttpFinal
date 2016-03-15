@@ -17,9 +17,20 @@
 package cn.finalteam.okhttpfinal.sample;
 
 import android.app.Application;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import cn.finalteam.galleryfinal.CoreConfig;
+import cn.finalteam.galleryfinal.FunctionConfig;
+import cn.finalteam.galleryfinal.GalleryFinal;
+import cn.finalteam.galleryfinal.ImageLoader;
+import cn.finalteam.galleryfinal.ThemeConfig;
 import cn.finalteam.okhttpfinal.OkHttpFinal;
-import java.util.HashMap;
-import java.util.Map;
+import cn.finalteam.okhttpfinal.OkHttpFinalConfiguration;
+import cn.finalteam.okhttpfinal.Part;
+import okhttp3.Headers;
+import okhttp3.Interceptor;
 
 /**
  * Desction:
@@ -31,18 +42,46 @@ public class IApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-        Map<String, String> commonParamMap = new HashMap<>();
-        Map<String, String> commonHeaderMap = new HashMap<>();
+        initOkHttpFinal();
 
-        OkHttpFinal okHttpFinal = new OkHttpFinal.Builder()
-                .setCommenParams(commonParamMap)
-                .setCommenHeader(commonHeaderMap)
+        initGalleryFinal();
+    }
+
+    private void initOkHttpFinal() {
+
+        List<Part> commomParams = new ArrayList<>();
+        Headers commonHeaders = new Headers.Builder().build();
+
+        List<Interceptor> interceptorList = new ArrayList<>();
+        OkHttpFinalConfiguration.Builder builder = new OkHttpFinalConfiguration.Builder()
+                .setCommenParams(commomParams)
+                .setCommenHeaders(commonHeaders)
                 .setTimeout(Constants.REQ_TIMEOUT)
-                .setDebug(true)
-                //.setCertificates(...)
-                //.setHostnameVerifier(new SkirtHttpsHostnameVerifier())
+                .setInterceptors(interceptorList)
+                        //.setCookieJar(CookieJar.NO_COOKIES)
+                        //.setCertificates(...)
+                        //.setHostnameVerifier(new SkirtHttpsHostnameVerifier())
+                .setDebug(true);
+        OkHttpFinal.getInstance().init(builder.build());
+    }
 
+
+    private void initGalleryFinal() {
+        //配置功能
+        FunctionConfig functionConfig = new FunctionConfig.Builder()
+                .setEnableCamera(true)
+                .setEnableEdit(true)
+                .setEnableCrop(true)
+                .setEnableRotate(true)
+                .setCropSquare(true)
+                .setEnablePreview(true)
         .build();
-        okHttpFinal.init();
+
+        //配置imageloader
+        ImageLoader imageloader = new UILImageLoader();
+        CoreConfig coreConfig = new CoreConfig.Builder(this, imageloader, ThemeConfig.CYAN)
+                .setFunctionConfig(functionConfig)
+                .build();
+        GalleryFinal.init(coreConfig);
     }
 }

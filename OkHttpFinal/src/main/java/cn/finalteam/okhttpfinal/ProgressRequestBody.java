@@ -16,9 +16,11 @@
 
 package cn.finalteam.okhttpfinal;
 
-import com.squareup.okhttp.MediaType;
-import com.squareup.okhttp.RequestBody;
+import android.os.AsyncTask;
+
 import java.io.IOException;
+import okhttp3.MediaType;
+import okhttp3.RequestBody;
 import okio.Buffer;
 import okio.BufferedSink;
 import okio.ForwardingSink;
@@ -30,24 +32,24 @@ import okio.Sink;
  * Author:pengjianbo
  * Date:15/12/10 下午5:31
  */
-public class ProgressRequestBody extends RequestBody{
+public class ProgressRequestBody extends RequestBody {
     //实际的待包装请求体
     private final RequestBody requestBody;
     //进度回调接口
-    private final BaseHttpRequestCallback progressListener;
+    private final HttpTask httpTask;
     //包装完成的BufferedSink
     private BufferedSink bufferedSink;
-    //开始下载时间，用户计算加载速度
-    private long mPreviousTime;
+    //开始时间，用户计算加载速度
+    private long previousTime;
 
     /**
      * 构造函数，赋值
      * @param requestBody 待包装的请求体
-     * @param progressListener 回调接口
+     * @param httpTask
      */
-    public ProgressRequestBody(RequestBody requestBody, BaseHttpRequestCallback progressListener) {
+    public ProgressRequestBody(RequestBody requestBody, HttpTask httpTask) {
         this.requestBody = requestBody;
-        this.progressListener = progressListener;
+        this.httpTask = httpTask;
     }
 
     /**
@@ -84,7 +86,6 @@ public class ProgressRequestBody extends RequestBody{
         requestBody.writeTo(bufferedSink);
         //必须调用flush，否则最后一部分数据可能不会被写入
         bufferedSink.flush();
-
     }
 
     /**
@@ -93,7 +94,7 @@ public class ProgressRequestBody extends RequestBody{
      * @return Sink
      */
     private Sink sink(Sink sink) {
-        mPreviousTime = System.currentTimeMillis();
+        previousTime = System.currentTimeMillis();
         return new ForwardingSink(sink) {
             //当前写入字节数
             long bytesWritten = 0L;
@@ -111,15 +112,16 @@ public class ProgressRequestBody extends RequestBody{
                 bytesWritten += byteCount;
 
                 //回调
-                if (progressListener!=null) {
-                    //计算下载速度
-                    long totalTime = (System.currentTimeMillis() - mPreviousTime)/1000;
+                if (httpTask!=null) {
+                    //计算速度
+                    long totalTime = (System.currentTimeMillis() - previousTime)/1000;
                     if ( totalTime == 0 ) {
                         totalTime += 1;
                     }
                     long networkSpeed = bytesWritten / totalTime;
                     int progress = (int)(bytesWritten * 100 / contentLength);
-                    progressListener.onProgress(progress, networkSpeed, bytesWritten == contentLength);
+                    boolean done = bytesWritten == contentLength;
+                    httpTask.updateProgress(progress, networkSpeed, done?1:0);
                 }
             }
         };
